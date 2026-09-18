@@ -1,183 +1,29 @@
-import { Layout } from "@/components/layout";
+import { useEffect, useState } from "react";
 import { useListPlatforms, useGetMe } from "@workspace/api-client-react";
+import { ArrowUpRight, Check, ExternalLink, Gamepad2, Layers3, Sparkles, Timer, Zap } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Zap, ExternalLink, ChevronRight } from "lucide-react";
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { Layout } from "@/components/layout";
 import { Reveal } from "@/components/motion-fx";
 
-function buildOfferUrl(template: string, userId: number): string {
-  return template
-    .replace(/\{USER_ID\}/g, String(userId))
-    .replace(/\[USER_ID\]/g, String(userId))
-    .replace(/%7BUSER_ID%7D/g, String(userId));
-}
+function buildOfferUrl(template: string, userId: number) { return template.replace(/\{USER_ID\}/g, String(userId)).replace(/\[USER_ID\]/g, String(userId)).replace(/%7BUSER_ID%7D/g, String(userId)); }
+const accents = ["from-red-500 to-rose-700", "from-slate-800 to-slate-950", "from-orange-400 to-red-600", "from-rose-500 to-red-800"];
 
 export default function Platforms() {
   const { data: platformsData, isLoading: loadingPlatforms } = useListPlatforms();
   const { data: user } = useGetMe();
-  const [selectedPlatform, setSelectedPlatform] = useState<any>(null);
-
   const platforms = platformsData?.platforms ?? [];
+  const [selectedPlatform, setSelectedPlatform] = useState<any>(null);
+  useEffect(() => { if (!platforms.length || selectedPlatform) return; setSelectedPlatform(platforms.find((p: any) => p.placement === "homepage" && p.apiEndpoint && p.isEnabled) ?? platforms.find((p: any) => p.apiEndpoint && p.isEnabled) ?? null); }, [platforms, selectedPlatform]);
+  const getOfferUrl = (platform: any) => !platform?.apiEndpoint || !user?.id ? platform?.apiEndpoint : buildOfferUrl(platform.apiEndpoint, user.id);
+  const enabledCount = platforms.filter((p: any) => p.isEnabled && p.apiEndpoint).length;
 
-  // Auto-open the admin-featured platform (homepage placement) on load
-  useEffect(() => {
-    if (!platforms.length || selectedPlatform) return;
-    // First priority: homepage placement
-    const featured = platforms.find((p: any) => p.placement === "homepage" && p.apiEndpoint && p.isEnabled);
-    if (featured) { setSelectedPlatform(featured); return; }
-    // Fallback: first platform with a URL
-    const fallback = platforms.find((p: any) => p.apiEndpoint && p.isEnabled);
-    if (fallback) setSelectedPlatform(fallback);
-  }, [platforms]);
+  return <Layout><div className="mx-auto max-w-[1280px] space-y-6 sm:space-y-8">
+    <Reveal><section className="relative overflow-hidden rounded-[2rem] bg-red-50 px-5 py-7 sm:px-8 sm:py-9"><div className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full bg-red-200/60 blur-3xl" /><div className="relative flex flex-col justify-between gap-7 lg:flex-row lg:items-end"><div><div className="mb-4 inline-flex items-center gap-2 rounded-full border border-red-100 bg-white px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[.18em] text-red-600"><Sparkles className="h-3.5 w-3.5" /> Choose your next move</div><h1 className="text-3xl font-black tracking-[-.06em] text-slate-950 sm:text-5xl">Find a better way<br /><span className="text-red-600">to spend your time.</span></h1><p className="mt-4 max-w-xl text-sm leading-6 text-slate-600 sm:text-base">Pick an opportunity that fits your mood. Every platform is organized for a clear, focused earning experience.</p></div><div className="flex shrink-0 items-center gap-5 rounded-2xl bg-white/80 p-4 shadow-sm"><div><p className="text-2xl font-black text-slate-950">{enabledCount}</p><p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-400">Live platforms</p></div><div className="h-10 w-px bg-slate-200" /><div><p className="flex items-center gap-1.5 text-sm font-black text-emerald-600"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Online</p><p className="mt-1 text-[10px] font-bold text-slate-400">Ready to start</p></div></div></div></section></Reveal>
 
-  const getOfferUrl = (platform: any) => {
-    if (!platform?.apiEndpoint || !user?.id) return platform?.apiEndpoint;
-    return buildOfferUrl(platform.apiEndpoint, user.id);
-  };
+    <section className="grid gap-6 xl:grid-cols-[minmax(0,.85fr)_minmax(0,1.65fr)] xl:items-start"><Reveal><div className="rounded-[1.75rem] border border-slate-200 bg-white p-4 shadow-sm sm:p-5"><div className="flex items-center justify-between px-1"><div><p className="text-xs font-extrabold uppercase tracking-[.16em] text-slate-400">Your options</p><h2 className="mt-1 text-xl font-black">Pick a platform</h2></div><Layers3 className="h-5 w-5 text-red-500" /></div><div className="mt-5 space-y-3">{loadingPlatforms ? Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-[84px] w-full rounded-2xl" />) : platforms.length === 0 ? <div className="rounded-2xl bg-slate-50 px-5 py-12 text-center"><Zap className="mx-auto h-7 w-7 text-red-500" /><p className="mt-3 font-bold">No platforms yet</p><p className="mt-1 text-xs text-slate-400">Check back soon.</p></div> : platforms.map((platform: any, index: number) => { const active = selectedPlatform?.id === platform.id; const hasUrl = Boolean(platform.apiEndpoint); const featured = platform.placement === "homepage"; return <button key={platform.id} type="button" disabled={!hasUrl} onClick={() => hasUrl && setSelectedPlatform(platform)} className={`group relative w-full overflow-hidden rounded-2xl border p-3 text-left transition-all ${active ? "border-slate-950 bg-slate-950 text-white shadow-xl shadow-slate-200" : hasUrl ? "border-slate-200 bg-white hover:-translate-y-0.5 hover:border-red-200 hover:bg-red-50/40" : "border-slate-100 bg-slate-50 opacity-50"}`}><div className="flex items-center gap-3"><div className={`grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-gradient-to-br ${accents[index % accents.length]}`}>{platform.logoUrl ? <img src={platform.logoUrl} alt="" className="h-full w-full object-cover" /> : <Gamepad2 className="h-5 w-5 text-white" />}</div><div className="min-w-0 flex-1"><div className="flex items-center gap-2"><p className="truncate text-sm font-black">{platform.name}</p>{featured && <span className={`rounded-full px-2 py-0.5 text-[8px] font-extrabold uppercase tracking-wider ${active ? "bg-white/15 text-red-200" : "bg-red-50 text-red-600"}`}>Top pick</span>}</div><p className={`mt-1 text-xs ${active ? "text-white/55" : "text-slate-400"}`}>{hasUrl ? "Ready for you" : "Coming soon"}</p></div>{hasUrl && <div className={`grid h-8 w-8 place-items-center rounded-full ${active ? "bg-white/10" : "bg-slate-50 group-hover:bg-red-100"}`}><ArrowUpRight className={`h-4 w-4 ${active ? "text-white" : "text-slate-400 group-hover:text-red-600"}`} /></div>}</div>{active && <div className="absolute bottom-0 left-0 h-1 w-full bg-red-500" />}</button>; })}</div></div></Reveal>
 
-  return (
-    <Layout>
-      <div className="space-y-4">
-        <Reveal>
-          <h2 className="text-2xl font-black tracking-tight text-foreground">Offerwalls</h2>
-          <p className="text-muted-foreground text-sm mt-1">Select a platform to start earning USDT.</p>
-        </Reveal>
-
-        <div className="platforms-workspace flex flex-col lg:flex-row gap-4">
-          {/* Platform List */}
-          <div className="platform-list w-full lg:w-72 shrink-0 flex flex-col gap-2 overflow-y-auto pr-1">
-            {loadingPlatforms ? (
-              Array.from({ length: 5 }).map((_, i) => (
-                <Skeleton key={i} className="h-16 w-full rounded-xl" />
-              ))
-            ) : platforms.length === 0 ? (
-              <div className="text-center py-16 bg-card border border-border rounded-2xl">
-                <div className="w-12 h-12 bg-primary/10 border border-primary/20 rounded-xl flex items-center justify-center mx-auto mb-3">
-                  <Zap className="h-6 w-6 text-primary" />
-                </div>
-                <p className="font-semibold text-sm text-foreground">No platforms yet</p>
-                <p className="text-muted-foreground text-xs mt-1">Check back soon!</p>
-              </div>
-            ) : (
-              platforms.map((platform: any, i: number) => {
-                const isSelected = selectedPlatform?.id === platform.id;
-                const hasUrl = !!platform.apiEndpoint;
-                const isFeatured = platform.placement === "homepage";
-
-                return (
-                  <motion.button
-                    key={platform.id}
-                    initial={{ opacity: 0, x: -12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.35, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
-                    whileHover={hasUrl ? { scale: 1.02, x: 2 } : undefined}
-                    whileTap={hasUrl ? { scale: 0.98 } : undefined}
-                    onClick={() => hasUrl && setSelectedPlatform(platform)}
-                    disabled={!hasUrl}
-                    className={`w-full text-left flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors duration-200 group ${
-                      isSelected
-                        ? "brand-gradient text-white border-transparent shadow-brand"
-                        : hasUrl
-                        ? "bg-card border-border hover:border-primary/40 hover:bg-primary/5 cursor-pointer"
-                        : "bg-card border-border opacity-50 cursor-not-allowed"
-                    }`}
-                  >
-                    {platform.logoUrl ? (
-                      <img
-                        src={platform.logoUrl}
-                        alt={platform.name}
-                        className="w-9 h-9 rounded-lg object-cover border border-white/20 shrink-0"
-                      />
-                    ) : (
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border ${
-                        isSelected ? "bg-white/20 border-white/30" : "bg-primary/10 border-primary/20"
-                      }`}>
-                        <Zap className={`h-4 w-4 ${isSelected ? "text-white" : "text-primary"}`} />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <p className={`font-bold text-sm truncate ${isSelected ? "text-white" : "text-foreground"}`}>
-                          {platform.name}
-                        </p>
-                        {isFeatured && !isSelected && (
-                          <span className="text-[9px] bg-primary/15 text-primary px-1.5 py-0.5 rounded font-bold uppercase tracking-wide shrink-0">
-                            Featured
-                          </span>
-                        )}
-                        {isFeatured && isSelected && (
-                          <span className="text-[9px] bg-white/25 text-white px-1.5 py-0.5 rounded font-bold uppercase tracking-wide shrink-0">
-                            Featured
-                          </span>
-                        )}
-                      </div>
-                      <p className={`text-xs truncate mt-0.5 ${isSelected ? "text-white/75" : "text-muted-foreground"}`}>
-                        {hasUrl ? "Click to open" : "Coming soon"}
-                      </p>
-                    </div>
-                    {hasUrl && (
-                      <ChevronRight className={`h-4 w-4 shrink-0 ${isSelected ? "text-white" : "text-muted-foreground group-hover:text-primary"}`} />
-                    )}
-                  </motion.button>
-                );
-              })
-            )}
-          </div>
-
-          {/* Iframe Panel — always shows selected platform */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.985 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-            className="flex-1 bg-card border border-border rounded-2xl overflow-hidden flex flex-col shadow-sm"
-          >
-            {selectedPlatform ? (
-              <>
-                {/* Top bar */}
-                <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-primary/5 shrink-0">
-                  <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                  {selectedPlatform.logoUrl ? (
-                    <img src={selectedPlatform.logoUrl} alt={selectedPlatform.name} className="w-6 h-6 rounded object-cover border border-border" />
-                  ) : (
-                    <div className="w-6 h-6 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center">
-                      <Zap className="h-3.5 w-3.5 text-primary" />
-                    </div>
-                  )}
-                  <span className="font-bold text-sm text-foreground flex-1">{selectedPlatform.name}</span>
-                  <a
-                    href={getOfferUrl(selectedPlatform)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-xs text-primary hover:underline font-medium shrink-0"
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" /> Open in new tab
-                  </a>
-                </div>
-
-                {/* The iframe — always open, never closes */}
-                <iframe
-                  key={selectedPlatform.id}
-                  src={getOfferUrl(selectedPlatform)}
-                  className="flex-1 w-full border-0"
-                  allow="fullscreen"
-                  title={selectedPlatform.name}
-                />
-              </>
-            ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-8">
-                <div className="w-16 h-16 rounded-2xl brand-gradient shadow-brand flex items-center justify-center mb-5 animate-float">
-                  <Zap className="h-8 w-8 text-white" />
-                </div>
-                <h3 className="text-lg font-bold text-foreground mb-2">No platforms available</h3>
-                <p className="text-muted-foreground text-sm max-w-xs">
-                  The admin hasn't added any offerwalls yet. Check back soon!
-                </p>
-              </div>
-            )}
-          </motion.div>
-        </div>
-      </div>
-    </Layout>
-  );
+      <Reveal delay={.1}><div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm"><div className="flex flex-col gap-4 border-b border-slate-100 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6"><div className="flex items-center gap-3"><div className="relative grid h-10 w-10 place-items-center rounded-xl bg-red-50 text-red-600"><span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-emerald-500" />{selectedPlatform?.logoUrl ? <img src={selectedPlatform.logoUrl} alt="" className="h-6 w-6 rounded object-cover" /> : <Gamepad2 className="h-5 w-5" />}</div><div><h2 className="font-black">{selectedPlatform?.name ?? "Your earning space"}</h2><p className="mt-0.5 text-xs text-slate-400">{selectedPlatform ? "Selected platform · Live" : "Select a platform to begin"}</p></div></div>{selectedPlatform && <div className="flex items-center gap-3"><span className="hidden items-center gap-1.5 text-xs font-bold text-emerald-600 sm:flex"><Check className="h-3.5 w-3.5" /> Secure session</span><a href={getOfferUrl(selectedPlatform)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs font-extrabold text-red-600 hover:text-red-700">Open full view <ExternalLink className="h-3.5 w-3.5" /></a></div>}</div>{selectedPlatform && getOfferUrl(selectedPlatform) ? <iframe key={selectedPlatform.id} src={getOfferUrl(selectedPlatform)} className="block w-full border-0" style={{ height: "min(720px, 78vh)" }} allow="fullscreen" title={selectedPlatform.name} /> : <div className="grid min-h-[470px] place-items-center px-8 py-16 text-center"><div><div className="mx-auto grid h-16 w-16 place-items-center rounded-3xl bg-slate-950 text-red-400"><Timer className="h-7 w-7" /></div><h3 className="mt-5 text-lg font-black">Your next opportunity starts here</h3><p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">Choose one of the platforms on the left and we will open your personalized earning feed.</p></div></div>}</div></Reveal>
+    </section>
+  </div></Layout>;
 }
