@@ -1,0 +1,12 @@
+[build]
+builder = "nixpacks"
+buildCommand = "npm install --include=dev && npm run db:push:force && npm run build"
+
+[deploy]
+startCommand = "NODE_ENV=production node --enable-source-maps dist/index.mjs"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3
+
+[healthcheck]
+path = "/api/healthz"
+timeout = 30
