@@ -1,192 +1,37 @@
-import { Layout } from "@/components/layout";
+import { useEffect, useState } from "react";
+import { Link } from "wouter";
 import { useGetDashboardStats, useGetBalance, useListPlatforms, useGetMe } from "@workspace/api-client-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ArrowUpRight, CheckCircle2, ChevronRight, Clock3, ExternalLink, Gamepad2, LayoutGrid, Sparkles, TrendingUp, WalletCards, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Link } from "wouter";
-import { Coins, Download, CheckCircle2, History, ArrowUpRight, Gamepad2, Zap, ExternalLink } from "lucide-react";
-import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import { Tilt, Reveal } from "@/components/motion-fx";
+import { Layout } from "@/components/layout";
+import { Reveal } from "@/components/motion-fx";
 
-const formatMoney = (value?: string | number | null) => {
-  const n = Number(value ?? 0);
-  return new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: n % 1 === 0 ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(n);
-};
-
-function buildOfferUrl(template: string, userId: number): string {
-  return template
-    .replace(/\{USER_ID\}/g, String(userId))
-    .replace(/\[USER_ID\]/g, String(userId))
-    .replace(/%7BUSER_ID%7D/g, String(userId));
-}
+const money = (value?: string | number | null) => new Intl.NumberFormat("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(Number(value ?? 0));
+function buildOfferUrl(template: string, userId: number) { return template.replace(/\{USER_ID\}/g, String(userId)).replace(/\[USER_ID\]/g, String(userId)).replace(/%7BUSER_ID%7D/g, String(userId)); }
 
 export default function Dashboard() {
   const { data: stats, isLoading: statsLoading } = useGetDashboardStats();
-  const { data: balanceData } = useGetBalance();
+  const { data: balanceData, isLoading: balanceLoading } = useGetBalance();
   const { data: platformsData } = useListPlatforms();
   const { data: user } = useGetMe();
   const [featuredPlatform, setFeaturedPlatform] = useState<any>(null);
-
-  // Pick the homepage-placement platform as the featured one
-  useEffect(() => {
-    if (!platformsData?.platforms) return;
-    const hp = platformsData.platforms.find((p: any) => p.placement === "homepage" && p.isEnabled && p.apiEndpoint);
-    if (hp) {
-      setFeaturedPlatform(hp);
-    } else {
-      // fallback: first platform with a URL
-      const fallback = platformsData.platforms.find((p: any) => p.apiEndpoint && p.isEnabled);
-      if (fallback) setFeaturedPlatform(fallback);
-    }
-  }, [platformsData]);
-
-  const offerUrl = featuredPlatform && user?.id
-    ? buildOfferUrl(featuredPlatform.apiEndpoint, user.id)
-    : featuredPlatform?.apiEndpoint;
-
-  const statCards = [
-    { label: "Current Balance", value: `$${formatMoney(balanceData?.balance)}`, icon: Coins, highlight: true },
-    { label: "Total Earned", value: `$${formatMoney(stats?.totalEarned)}`, icon: CheckCircle2, highlight: false },
-    { label: "Total Withdrawn", value: `$${formatMoney(stats?.totalWithdrawn)}`, icon: Download, highlight: false },
-    { label: "Pending", value: `$${formatMoney(stats?.pendingWithdrawals)}`, icon: History, highlight: false },
+  useEffect(() => { const list = platformsData?.platforms ?? []; setFeaturedPlatform(list.find((p: any) => p.placement === "homepage" && p.isEnabled && p.apiEndpoint) ?? list.find((p: any) => p.isEnabled && p.apiEndpoint) ?? null); }, [platformsData]);
+  const offerUrl = featuredPlatform && user?.id ? buildOfferUrl(featuredPlatform.apiEndpoint, user.id) : featuredPlatform?.apiEndpoint;
+  const metrics = [
+    { label: "Available now", value: balanceData?.balance, icon: WalletCards, tone: "red" },
+    { label: "All-time earned", value: stats?.totalEarned, icon: TrendingUp, tone: "dark" },
+    { label: "Withdrawn", value: stats?.totalWithdrawn, icon: CheckCircle2, tone: "soft" },
+    { label: "In review", value: stats?.pendingWithdrawals, icon: Clock3, tone: "soft" },
   ];
 
-  return (
-    <Layout>
-      <div className="space-y-6 max-w-7xl">
-        {/* Header */}
-        <Reveal className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="text-2xl font-black tracking-tight text-foreground">Dashboard</h2>
-            <p className="text-muted-foreground text-sm mt-0.5">Here's your earnings overview.</p>
-          </div>
-          <div className="flex gap-2">
-            <Link href="/platforms">
-              <Button variant="outline" size="sm" className="border-border hover:border-primary/40 hover:text-primary">
-                <Gamepad2 className="h-4 w-4 mr-1.5" />Browse Offers
-              </Button>
-            </Link>
-            <Link href="/withdraw">
-              <Button size="sm" className="brand-gradient text-white font-bold shadow-brand hover:-translate-y-0.5 transition-transform">
-                <ArrowUpRight className="h-4 w-4 mr-1.5" />Withdraw
-              </Button>
-            </Link>
-          </div>
-        </Reveal>
+  return <Layout><div className="mx-auto max-w-[1280px] space-y-6 sm:space-y-8">
+    <Reveal><section className="relative overflow-hidden rounded-[2rem] bg-slate-950 px-5 py-7 text-white sm:px-8 sm:py-9"><div className="pointer-events-none absolute -right-20 -top-28 h-80 w-80 rounded-full bg-red-600/30 blur-3xl" /><div className="pointer-events-none absolute bottom-0 left-1/3 h-32 w-80 rounded-full bg-red-900/30 blur-3xl" /><div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end"><div><div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[.2em] text-red-300"><Sparkles className="h-3.5 w-3.5" /> Personal earning space</div><h1 className="max-w-2xl text-3xl font-black leading-tight tracking-[-.05em] sm:text-5xl">Make your next<br /><span className="text-red-400">move count.</span></h1><p className="mt-4 max-w-xl text-sm leading-6 text-white/55 sm:text-base">Choose an opportunity, complete it at your pace and keep building your reward balance.</p><div className="mt-7 flex flex-wrap gap-3"><Link href="/platforms"><Button className="h-11 rounded-xl bg-white px-5 font-extrabold text-slate-950 hover:bg-red-50"><Gamepad2 className="mr-2 h-4 w-4" />Explore opportunities</Button></Link><Link href="/withdraw"><Button variant="outline" className="h-11 rounded-xl border-white/15 bg-white/5 px-5 font-extrabold text-white hover:bg-white/10">Cash out <ArrowUpRight className="ml-2 h-4 w-4" /></Button></Link></div></div><div className="relative min-w-[220px] rounded-3xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm"><div className="flex items-center justify-between text-xs font-bold text-white/50"><span>Current balance</span><WalletCards className="h-4 w-4 text-red-300" /></div>{balanceLoading ? <Skeleton className="mt-4 h-10 w-36 bg-white/10" /> : <p className="mt-3 text-4xl font-black tracking-tight">${money(balanceData?.balance)}<span className="ml-2 text-sm font-bold text-red-300">USDT</span></p>}<div className="mt-5 flex items-center gap-2 text-xs font-bold text-emerald-300"><TrendingUp className="h-3.5 w-3.5" /> Keep your momentum going</div></div></div></section></Reveal>
 
-        {/* Stats — 3D tilt cards */}
-        <div className="grid gap-2 grid-cols-2 lg:grid-cols-4">
-          {statCards.map((stat, i) => (
-            <Reveal key={stat.label} delay={i * 0.06}>
-              <Tilt strength={6} className="h-full">
-                <Card
-                  className={`relative h-full overflow-hidden border-border transition-shadow duration-300 hover:shadow-brand ${
-                    stat.highlight ? "glass-card" : "bg-card"
-                  }`}
-                >
-                  {stat.highlight && (
-                    <div className="pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full brand-gradient opacity-20 blur-2xl" aria-hidden />
-                  )}
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 p-2">
-                    <CardTitle className="text-[8px] sm:text-[9px] font-bold text-muted-foreground uppercase tracking-wider">{stat.label}</CardTitle>
-                    <div
-                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md ${
-                        stat.highlight ? "brand-gradient shadow-brand" : "bg-primary/10 border border-primary/20"
-                      }`}
-                    >
-                      <stat.icon className={`h-2.5 w-2.5 ${stat.highlight ? "text-white" : "text-primary"}`} />
-                    </div>
-                  </CardHeader>
-                  <CardContent className="relative p-2 pt-0">
-                    {statsLoading ? (
-                      <Skeleton className="h-6 w-16 mt-0.5" />
-                    ) : (
-                      <div className={`text-lg sm:text-xl font-black tracking-tight ${stat.highlight ? "brand-text" : "text-foreground"}`}>
-                        {stat.value}
-                      </div>
-                    )}
-                    <p className="text-[8px] text-muted-foreground mt-0 uppercase tracking-wider">USDT</p>
-                  </CardContent>
-                </Card>
-              </Tilt>
-            </Reveal>
-          ))}
-        </div>
+    <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">{metrics.map((metric, index) => <Reveal key={metric.label} delay={index * .05}><div className={`group relative overflow-hidden rounded-2xl border p-4 sm:p-5 ${metric.tone === "red" ? "border-red-200 bg-red-600 text-white shadow-lg shadow-red-100" : metric.tone === "dark" ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white text-slate-950"}`}><div className="flex items-start justify-between gap-2"><p className={`text-[10px] font-extrabold uppercase tracking-[.12em] ${metric.tone === "soft" ? "text-slate-400" : "text-white/55"}`}>{metric.label}</p><metric.icon className={`h-4 w-4 ${metric.tone === "soft" ? "text-red-500" : "text-red-200"}`} /></div>{statsLoading || balanceLoading ? <Skeleton className={`mt-5 h-8 w-20 ${metric.tone === "soft" ? "bg-slate-100" : "bg-white/15"}`} /> : <p className="mt-5 text-2xl font-black tracking-tight sm:text-3xl">${money(metric.value)}</p>}<p className={`mt-1 text-[10px] font-bold ${metric.tone === "soft" ? "text-slate-400" : "text-white/45"}`}>USDT</p></div></Reveal>)}</section>
 
-        {/* Featured Platform — always open iframe */}
-        <Reveal delay={0.15}>
-          <div className="rounded-2xl border border-border bg-card overflow-hidden shadow-sm">
-            {/* Header bar */}
-            <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-primary/5">
-              <div className="flex items-center gap-2.5">
-                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-                {featuredPlatform?.logoUrl ? (
-                  <img src={featuredPlatform.logoUrl} alt={featuredPlatform.name} className="w-6 h-6 rounded object-cover border border-border" />
-                ) : (
-                  <div className="w-6 h-6 rounded-md bg-primary/15 border border-primary/25 flex items-center justify-center">
-                    <Zap className="h-3.5 w-3.5 text-primary" />
-                  </div>
-                )}
-                <span className="font-bold text-sm text-foreground">
-                  {featuredPlatform ? featuredPlatform.name : "No Featured Platform"}
-                </span>
-                {featuredPlatform && (
-                  <span className="text-[10px] brand-gradient text-white px-2 py-0.5 rounded font-bold uppercase tracking-wider">Live</span>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                {offerUrl && (
-                  <a href={offerUrl} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-1 text-xs text-primary hover:underline font-medium">
-                    <ExternalLink className="h-3 w-3" /> Open in tab
-                  </a>
-                )}
-                <Link href="/platforms">
-                  <Button variant="outline" size="sm" className="h-7 text-xs border-border hover:border-primary/40 hover:text-primary">
-                    <Gamepad2 className="h-3 w-3 mr-1" /> Switch Platform
-                  </Button>
-                </Link>
-              </div>
-            </div>
-
-            {/* Iframe area */}
-            {featuredPlatform && offerUrl ? (
-              <iframe
-                key={featuredPlatform.id}
-                src={offerUrl}
-                className="w-full border-0"
-                style={{ height: "600px" }}
-                allow="fullscreen"
-                title={featuredPlatform.name}
-              />
-            ) : (
-              <div className="flex flex-col items-center justify-center text-center py-20 px-8" style={{ height: "600px" }}>
-                <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  className="w-16 h-16 rounded-2xl brand-gradient shadow-brand flex items-center justify-center mb-5 animate-float"
-                >
-                  <Gamepad2 className="h-8 w-8 text-white" />
-                </motion.div>
-                <h3 className="text-lg font-bold text-foreground mb-2">No Platform Featured Yet</h3>
-                <p className="text-muted-foreground text-sm max-w-xs mb-5">
-                  The admin hasn't set a featured platform for the dashboard yet. Browse all available offerwalls.
-                </p>
-                <Link href="/platforms">
-                  <Button className="brand-gradient text-white font-bold shadow-brand hover:-translate-y-0.5 transition-transform">
-                    <Gamepad2 className="h-4 w-4 mr-2" /> Browse Offerwalls
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </div>
-        </Reveal>
-      </div>
-    </Layout>
-  );
+    <section className="grid gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(300px,.5fr)]"><Reveal className="min-w-0"><div className="overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white shadow-sm"><div className="flex flex-col gap-4 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6"><div className="flex items-center gap-3"><div className="grid h-11 w-11 place-items-center rounded-2xl bg-red-50 text-red-600"><LayoutGrid className="h-5 w-5" /></div><div><div className="flex items-center gap-2"><h2 className="font-black">Your earning feed</h2><span className="rounded-full bg-emerald-50 px-2 py-1 text-[9px] font-extrabold uppercase tracking-wider text-emerald-600">Live</span></div><p className="mt-1 text-xs text-slate-400">A focused space for your next opportunity.</p></div></div><div className="flex items-center gap-2"><Link href="/platforms"><Button variant="outline" size="sm" className="h-9 rounded-xl border-slate-200 text-xs font-bold">Change feed</Button></Link>{offerUrl && <a href={offerUrl} target="_blank" rel="noopener noreferrer" className="hidden items-center gap-1 text-xs font-bold text-red-600 sm:flex">Open full view <ExternalLink className="h-3 w-3" /></a>}</div></div>{featuredPlatform && offerUrl ? <iframe key={featuredPlatform.id} src={offerUrl} className="w-full border-0" style={{ height: "min(640px, 72vh)" }} allow="fullscreen" title={featuredPlatform.name} /> : <div className="grid min-h-[420px] place-items-center px-8 py-16 text-center"><div><div className="mx-auto grid h-16 w-16 place-items-center rounded-3xl bg-red-50 text-red-600"><Zap className="h-7 w-7" /></div><h3 className="mt-5 text-lg font-black">Your feed is ready when you are</h3><p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-slate-500">Browse the available offerwalls and choose the opportunity that fits your time.</p><Link href="/platforms"><Button className="mt-5 rounded-xl red-gradient font-bold text-white"><Gamepad2 className="mr-2 h-4 w-4" />Browse opportunities</Button></Link></div></div>}</div></Reveal>
+      <Reveal delay={.1}><aside className="space-y-4"><div className="rounded-[1.75rem] bg-red-50 p-6"><div className="flex items-center justify-between"><p className="text-xs font-extrabold uppercase tracking-[.16em] text-red-600">Next step</p><Zap className="h-5 w-5 text-red-500" /></div><h2 className="mt-4 text-2xl font-black tracking-tight">Keep your streak alive.</h2><p className="mt-3 text-sm leading-6 text-slate-600">Small, consistent actions are the easiest way to grow your balance.</p><Link href="/platforms"><Button className="mt-6 w-full rounded-xl bg-slate-950 font-bold text-white hover:bg-slate-800">Find a task <ChevronRight className="ml-auto h-4 w-4" /></Button></Link></div><div className="rounded-[1.75rem] border border-slate-200 bg-white p-6"><p className="text-xs font-extrabold uppercase tracking-[.16em] text-slate-400">Quick links</p><div className="mt-4 space-y-2"><Link href="/transactions"><div className="flex items-center justify-between rounded-xl p-3 text-sm font-bold hover:bg-slate-50"><span>View activity</span><ChevronRight className="h-4 w-4 text-slate-400" /></div></Link><Link href="/withdraw"><div className="flex items-center justify-between rounded-xl p-3 text-sm font-bold hover:bg-slate-50"><span>Manage payouts</span><ChevronRight className="h-4 w-4 text-slate-400" /></div></Link><Link href="/settings"><div className="flex items-center justify-between rounded-xl p-3 text-sm font-bold hover:bg-slate-50"><span>Account settings</span><ChevronRight className="h-4 w-4 text-slate-400" /></div></Link></div></div></aside></Reveal>
+    </section>
+  </div></Layout>;
 }
