@@ -62,13 +62,6 @@ export default function Balance() {
                       <span className="text-2xl font-black text-primary-glow">USDT</span>
                     </div>
                   )}
-                  {!isLoading && Number(balanceData?.balance ?? 0) === 0 && (
-                    <img
-                      src="/assets/fox-earn-zero-balance.webp"
-                      alt="Your balance is currently zero"
-                      className="w-36 max-h-36 shrink-0 object-contain object-right sm:w-52 sm:max-h-44"
-                    />
-                  )}
                 </div>
 
                 <div className="relative mt-6 depth-3">
