@@ -3,7 +3,7 @@ import { useGetBalance } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
-import { Coins, Send, Clock, Wallet, ArrowUpRight } from "lucide-react";
+import { Coins, Send, Clock, ArrowUpRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tilt, Reveal } from "@/components/motion-fx";
 
@@ -40,10 +40,6 @@ export default function Balance() {
               <div className="absolute -inset-4 brand-gradient rounded-[2rem] blur-3xl opacity-30" aria-hidden />
               <div className="relative overflow-hidden rounded-[2rem] glass-dark p-8 shadow-brand-lg layer-3d">
                 <div className="pointer-events-none absolute inset-0 grid-overlay-light opacity-30" aria-hidden />
-                <div className="pointer-events-none absolute -right-10 -top-10 opacity-10">
-                  <Wallet className="w-56 h-56 text-white" />
-                </div>
-
                 <div className="relative depth-1 flex items-center justify-between">
                   <span className="text-xs font-bold uppercase tracking-[0.22em] text-white/70">Available Balance</span>
                   <span className="rounded-full bg-white/15 px-2.5 py-1 text-[10px] font-black uppercase tracking-widest text-white">
